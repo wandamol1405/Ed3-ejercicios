@@ -23,13 +23,13 @@ de la misma secuencia.
 void configPorts(void);
 void secuence_A(void);
 void secuence_B(void);
+void turnLed(uint32_t color);
 void delay(int delayTime);
 
 int main(){
 	configPorts();
 	while(1){
 		secuence_A();
-
 		secuence_B();
 	}
     return 0;
@@ -44,33 +44,22 @@ void configPorts(){
 
 // secuencia_A: rojo -> verde -> amarillo
 void secuence_A(void){
-    LPC_GPIO0->FIOCLR = RED;
-    delay(ON);
-    LPC_GPIO0->FIOSET = RED;
-    delay(OFF);
-    LPC_GPIO0->FIOCLR = GREEN;
-    delay(ON);
-    LPC_GPIO0->FIOSET = GREEN;
-    delay(OFF);
-    LPC_GPIO0->FIOCLR = YELLOW;
-    delay(ON);
-    LPC_GPIO0->FIOSET = YELLOW;
-    delay(OFF);
+    turnLed(RED);
+    turnLed(GREEN);
+    turnLed(YELLOW);
 }
 
 // secuencia_B: azul -> magenta -> blanco
 void secuence_B(void){
-    LPC_GPIO3->FIOCLR = BLUE;
+    turnLed(BLUE);
+    turnLed(MAGENTA);
+    turnLed(WHITE);
+}
+
+void turnLed(uint32_t color){
+    LPC_GPIO->FIOCLR = color;
     delay(ON);
-    LPC_GPIO3->FIOSET = BLUE;
-    delay(OFF);
-    LPC_GPIO3->FIOCLR = MAGENTA;
-    delay(ON);
-    LPC_GPIO3->FIOSET = MAGENTA;
-    delay(OFF);
-    LPC_GPIO3->FIOCLR = WHITE;
-    delay(ON);
-    LPC_GPIO3->FIOSET = WHITE;
+    LPC_GPIO->FIOSET = color;
     delay(OFF);
 }
 

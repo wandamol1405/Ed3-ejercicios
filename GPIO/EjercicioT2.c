@@ -12,24 +12,23 @@
 
 void configPorts(void);
 void delay(int delayTime);
+void turnLed(uint32_t color);
 
 int main(){
 	configPorts();
 	while(1){
-		LPC_GPIO0->FIOCLR = RED;
-		delay(ON);
-		LPC_GPIO0->FIOSET = RED;
-		delay(OFF);
-		LPC_GPIO3->FIOCLR = GREEN;
-		delay(ON);
-		LPC_GPIO3->FIOSET = GREEN;
-		delay(OFF);
-		LPC_GPIO3->FIOCLR = BLUE;
-		delay(ON);
-		LPC_GPIO3->FIOSET = BLUE;
-		delay(OFF);
+		turnLed(RED);
+		turnLed(GREEN);
+		turnLed(BLUE);
 	}
 	return 0;
+}
+
+void turnLed(uint32_t color){
+	LPC_GPIO->FIOCLR = color;
+	delay(ON);
+	LPC_GPIO->FIOSET = color;
+	delay(OFF);
 }
 
 void configPorts(){
