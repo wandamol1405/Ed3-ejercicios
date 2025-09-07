@@ -91,7 +91,7 @@ void EINT0_IRQHandler(){
 	LPC_SC->EXTINT |= (1<<0);					// Limpio la flag de interrupcion externa
 }
 
-void EINT3_IRQHandler(){   // Parte importante a ver, ya que asume recursividad
+void EINT3_IRQHandler(){   
 	if(countCfg == 0){ // Si es la primera vez que se presiona el switch
 		windowFlag++; // Activo la ventana de configuracion
 		countCfg++;  // Incremento la cantidad de veces que se presiono el switch
