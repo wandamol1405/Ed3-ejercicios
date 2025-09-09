@@ -36,7 +36,7 @@ static int gateFlag = 0;        // cerrada por defecto
 void cfgGPIO(void);
 void cfgGPIOInt(void);
 void cfgEINT(void);
-void cfgSystTick(void);
+void cfgSysTick(void);
 
 int main(void){
 	cfgGPIO();
@@ -59,7 +59,7 @@ void cfgGPIOInt(){
 	LPC_GPIOINT->IO2IntEnF |= (2<<0);    		// Configuro la interrupcion por flanco descendente
 	LPC_GPIOINT->IO2IntClr |= (2<<0);			// Limpia la flag de interrupcion
 	NVIC_SetPriority(EINT3_IRQn, 2);			// Setea la prioridad de la interrupcion -> mas baja
-	NVIC_EnableIRQn(EINT3_IRQn);				// Habilita la interrupcion por GPIO
+	NVIC_EnableIRQ(EINT3_IRQn);				// Habilita la interrupcion por GPIO
 }
 
 void cfgEINT(){
@@ -67,7 +67,7 @@ void cfgEINT(){
 	LPC_SC->EXTPOLAR |= (1<<0);					// Configuro la interrupcion por flanco ascendente
 	LPC_SC->EXTINT |= (1<<0);					// Limpio la flag de interrupcion externa
 	NVIC_SetPriority(EINT0_IRQn, 1);			// Setea la prioridad de la interrupcion -> media
-	NVIC_EnableIRQn(EINT0_IRQn);				// Habilita la interrupcion externa
+	NVIC_EnableIRQ(EINT0_IRQn);				// Habilita la interrupcion externa
 }
 
 void cfgSysTick(){

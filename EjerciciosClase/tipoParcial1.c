@@ -62,6 +62,7 @@ void cfgGPIO(){
 // Configura las interrupciones externas EINT0 y EINT1
 void cfgEINT(){
     LPC_PINCON->PINSEL4 |= (1<<20) | (1<<22); // P2.10 como EINT0, P2.11 como EINT1
+    LPC_PINCON->PINMODE4 |= (3<<20);        // P2.10 con resistencia de pull-down
     LPC_SC->EXTMODE |= (3<<0);                // EINT0 y EINT1 por flanco
     LPC_SC->POLAR |= (1<<0);                  // EINT0 por flanco de subida
     LPC_SC->POLAR &= ~(1<<1);                 // EINT1 por flanco de bajada
