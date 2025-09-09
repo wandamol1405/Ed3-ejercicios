@@ -24,7 +24,7 @@ int main(void){
 
 void configPorts(void){
     LPC_PINCON->PINSEL4 &= ~(0xF); // P2.0 y P2.1 como GPIO
-    LPC_PINCON->PINSEL4 |= (0x5<<11); // P2.10 como EINT1, P2.11 como EINT2
+    LPC_PINCON->PINSEL4 |= (0x5<<11); // P2.11 como EINT1, P2.12 como EINT2
     LPC_GPIO2->FIODIR &= ~(0x3); // P2.0 y P2.1 como entrada
 }
 
