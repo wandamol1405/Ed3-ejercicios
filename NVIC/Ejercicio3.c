@@ -23,9 +23,9 @@ int main(void){
 }
 
 void configPorts(void){
-    LPC_PINCON->PINSEL4 |= (1<<0); // P2.0 como entrada
-    LPC_PINCON->PINSEL4 |= (1<<2); // P2.1 como entrada
-    // Pull Ups configuradas por defecto
+    LPC_PINCON->PINSEL4 &= ~(0xF); // P2.0 y P2.1 como GPIO
+    LPC_PINCON->PINSEL4 |= (0x5<<10); // P2.10 como EINT1, P2.11 como EINT2
+    LPC_GPIO2->FIODIR &= ~(0x3); // P2.0 y P2.1 como entrada
 }
 
 void configNVIC(){
