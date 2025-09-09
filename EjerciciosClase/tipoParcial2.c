@@ -10,13 +10,13 @@
  Durante dicha ventana, se debe contar cuantas veces se presiona el switch y en funcion de dicha cantidad, establecer el tiempo de la barrera>
  de la siguiente manera:
     Cantidad de presiones del switch - Tiempo de apertura de la barrera - Cantidad de cuentas
-                0                   -       5 segundos                   -    20 veces
-                1                   -       10 segundos                  -    42 veces
-                2                   -       20 segundos                  -    83 veces
-                3                   -       40 segundos                  -    167 veces
-                4                   -       5 segundos                   -    20 veces
+                0                   -       5 segundos                   -    25 veces
+                1                   -       10 segundos                  -    50 veces
+                2                   -       20 segundos                  -    100 veces
+                3                   -       40 segundos                  -    200 veces
+                4                   -       5 segundos                   -    25 veces
 
-Para contar 3 segundos se debe recargar 12 veces
+Para contar 3 segundos se debe recargar 15 veces
 
 P2.4 -> GPIO ENTRADA -> LECTURA DEL TICKET (valido 1, invalido 0)
 P2.10 -> EINT0 -> SENSOR DEL AUTOMOVIL PRESENTE
@@ -27,8 +27,8 @@ P2.1 -> GPIO INTERRUPCION -> CONFIGURACION DE TIEMPO DE APERTURA DE LA BARRERA
 
 #include "LPC17xx.h"
 
-static uint32_t loadValue = 0xFFFFFF;  	// siempre se cuenta hasta desbordar lo maximo
-static int countST = 20; 					// por default, se esperan 5 segundos
+static uint32_t loadValue = 0xD59F7F;  	// para que cuente de a 200ms
+static int countST = 25; 					// por default, se esperan 5 segundos
 static int windowFlag = 0;		// sin intento de cambiar tiempo por defecto
 static int countCfg = 0;		// 5 segundos por defecto
 static int gateFlag = 0;        // cerrada por defecto
@@ -111,19 +111,19 @@ void SysTick_Handler(){
 			windowFlag = 0; // Cierro la ventana de configuracion
 			switch(countCfg){ // Veo cuantas veces se presiono el switch
 				case 0:
-					countST = 20; // 5 segundos
+					countST = 25; // 5 segundos
 					break;
 				case 1:
-					countST = 42; // 10 segundos
+					countST = 50; // 10 segundos
 					break;
 				case 2:
-					countST = 83; // 20 segundos
+					countST = 100; // 20 segundos
 					break;
 				case 3:
-					countST = 167; // 40 segundos
+					countST = 200; // 40 segundos
 					break;
 				default:
-					countST = 20; // 5 segundos
+					countST = 25; // 5 segundos
 					break;
 			}
 			countCfg = 0; // Reseteo la cantidad de veces que se presiono el switch
