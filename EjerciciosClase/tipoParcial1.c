@@ -108,7 +108,7 @@ void SysTick_Handler(){
         }else{
             LPC_GPIO2->FIOCLR = (1<<8);             // Pone P2.8 en bajo
         }
-        bit_pos = (bit_pos + 1) % SIZE_WAVE;        // Avanza al siguiente bit (circular)
+        bit_pos++;          // Avanza al siguiente bit
     }
     SysTick->CTRL &= SysTick->CTRL; //Limpia Flag SysTick (COUNTFLAG)
 
