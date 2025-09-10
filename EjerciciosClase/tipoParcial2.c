@@ -26,6 +26,7 @@ P2.1 -> GPIO INTERRUPCION -> CONFIGURACION DE TIEMPO DE APERTURA DE LA BARRERA
 */
 
 #include "LPC17xx.h"
+#include <stdint.h>
 
 static uint32_t loadValue = 0xD59F7F;  	// para que cuente de a 200ms
 static int countST = 25; 					// por default, se esperan 5 segundos
