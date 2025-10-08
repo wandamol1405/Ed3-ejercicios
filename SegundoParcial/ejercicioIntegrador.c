@@ -105,10 +105,10 @@ void cfgTimer0(){
 }
 
 void cfgDMA(){
-	GPDMA_Channel_CFG_Type cfgADC = {0};;
-	GPDMA_Channel_CFG_Type cfgM2M = {0};;
-	GPDMA_Channel_CFG_Type cfgDAC = {0};;
-	GPDMA_Channel_CFG_Type cfgDAC_WAVE = {0};;
+	GPDMA_Channel_CFG_Type cfgADC = {0};
+	GPDMA_Channel_CFG_Type cfgM2M = {0};
+	GPDMA_Channel_CFG_Type cfgDAC = {0};
+	GPDMA_Channel_CFG_Type cfgDAC_WAVE = {0};
 
 	GPDMA_LLI_Type cfgADC_LLI = {0};
 	GPDMA_LLI_Type cfgDAC_LLI = {0};
@@ -117,17 +117,16 @@ void cfgDMA(){
 	cfgADC_LLI.SrcAddr = (uint32_t)& LPC_ADC->ADDR0;
 	cfgADC_LLI.DstAddr = (uint32_t) adc_samples;
 	cfgADC_LLI.NextLLI = (uint32_t) &cfgADC_LLI;
-	cfgADC_LLI.Control = (TRANSFER_SIZE<<0)|(2<<18)|(2<<21)|(1<<27)&~(1<<26);
+	cfgADC_LLI.Control = (TRANSFER_SIZE^0xFFF<<0)|(2<<18)|(2<<21)|(1<<27)&~(1<<26);
 
 	cfgADC.ChannelNum = 0;
 	cfgADC.SrcMemAddr = 0;
 	cfgADC.DstMemAddr = (uint32_t)adc_samples;
 	cfgADC.TransferSize = TRANSFER_SIZE;
 	cfgADC.TransferType = GPDMA_TRANSFERTYPE_P2M;
-	cfgADC.TransferWidth = 1;
 	cfgADC.SrcConn = GPDMA_CONN_ADC;
 	cfgADC.DstConn = 0;
-	cfgADC.DMALLI = (uint32_t)&cfgADC_LLI;
+	cfgADC.DMALLI = 0;
 
 	cfgM2M.ChannelNum = 7;
 	cfgM2M.SrcMemAddr = (uint32_t)SRAM0;
@@ -200,13 +199,16 @@ void  EINT0_IRQHandler(){
 	static uint32_t count = 0;
 	count = (count+1)%6;
 	switch(count){
-	case 1:
+	case 1: // Modo punteros 
 		GPDMA_ChannelCmd(2, DISABLE);
 		adc_pointer_mode = 1;
+		ADC_IntConfig(LPC_ADC, ADC_ADINTEN0, ENABLE);
 		ADC_StartCmd(LPC_ADC, ADC_START_ON_MAT01);
 		break;
-	case 2:
+	case 2: // Modo DMA
 		adc_pointer_mode = 0;
+		ADC_IntConfig(LPC_ADC, ADC_ADINTEN0, DISABLE);
+		NVIC_DisableIRQ(ADC_IRQn);
 		GPDMA_ChannelCmd(0, ENABLE);
 		break;
 	case 3:
