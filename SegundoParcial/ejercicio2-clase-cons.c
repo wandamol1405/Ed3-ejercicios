@@ -87,10 +87,19 @@ void cfgGPDMA(){
     NVIC_EnableIRQ(DMA_IRQn);
 }
 
+void cfgDAC(){
+    DAC_Init(LPC_DAC);
+    DAC_CONVERTER_CFG_Type cfgDAC;
+	cfgDAC.CNT_ENA = DISABLE;
+	cfgDAC.DBLBUF_ENA = DISABLE;
+	cfgDAC.DMA_ENA = ENABLE;
+	DAC_ConfigDAConverterControl(LPC_DAC, &cfgDAC);
+}
+
 int main(){
     cfgPCB();
     cfgADC();
-    DAC_Init(LPC_DAC);
+    cfgDAC();
     cfgGPDMA();
     while(1);
 }

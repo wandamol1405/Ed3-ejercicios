@@ -76,6 +76,12 @@ void cfgADC(){
 
 void cfgDAC(){
 	DAC_Init(LPC_DAC);
+	DAC_CONVERTER_CFG_Type cfgDAC;
+	cfgDAC.CNT_ENA = ENABLE;
+	cfgDAC.DBLBUF_ENA = DISABLE;
+	cfgDAC.DMA_ENA = ENABLE;
+	DAC_ConfigDAConverterControl(LPC_DAC, &cfgDAC);
+	DAC_SetDMATimeOut(LPC_DAC, 65449);
 }
 
 void cfgEINT(){

@@ -152,10 +152,10 @@ void TIMER1_IRQHandler(void) {
         float D_avg = (count > 0) ? sum_D / count : 0.0;
         
         // 2. Escalar D_avg (0 a 1) a valor digital DAC (0 a MAX_DAC_VALUE_FOR_2V=621)
-        uint32_t dac_value_digital = (uint32_t)(D_avg * MAX_DAC_VALUE_FOR_2V);
+        uint16_t dac_value_digital = (uint16_t)(D_avg * MAX_DAC_VALUE_FOR_2V);
         
         // 3. Escribir al DAC
-        DAC_UpdateValue(LPC_DAC, dac_value_digital);
+        DAC_UpdateValue(LPC_DAC, (dac_value_digital<<6)); // Descarta 6 bits menos significativos
 
         // 4. Resetear el buffer para la próxima ventana de 0.5s
         buffer_index = 0;

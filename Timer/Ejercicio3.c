@@ -80,5 +80,5 @@ void EINT1_IRQHandler(void){
 		new_prescaler = 1000;
 	}
 	LPC_TIM2->PR = new_prescaler;
-	EXT1_ClearEXTIFlag(EXTI_EINT1);
+	EXTI_ClearEXTIFlag(EXTI_EINT1);
 }
