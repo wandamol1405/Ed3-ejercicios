@@ -20,8 +20,8 @@ OUTPUT:
 #define PRESCALER_VALUE 1000
 #define MATCH_VALUE 50 - 1
 
-#define RED (1<<22)  //p0.22
-#define GREEN (1<<25) //p3.25
+#define RED 22  //p0.22
+#define GREEN 25 //p3.25
 
 #define UMBRAL_1 40*(4065/100) // 40 grados 
 #define UMBRAL_2 60*(4065/100) // 60 grados 

@@ -27,3 +27,148 @@ Se alterna así entre los dos estados del sistema con cada interrupción externa
 Suponer una frecuencia de core clk de 80 Mhz. El código debe estar debidamente comentado.
 */
 
+#include <LPC17xx.h>
+#include "lpc17xx_pinsel.h"
+#include "lpc17xx_adc.h"
+#include "lpc17xx_dac.h"
+
+#define PRESCALER_VALUE 1000
+#define BUFFER_SIZE 0x2000 / sizeof(uint32_t)
+#define SRAM0 0x2007C000
+#define SRAM0_HALF SRAM0 + 0x2000
+
+uint16_t adc_samples[BUFFER_SIZE];
+uint32_t dac_wave[BUFFER_SIZE];
+uint8_t mode = 1; // true: wave, false: adc
+
+void waveform(){
+    for(uint16_t i=0; i<BUFFER_SIZE; i++){
+        dac_wave[i] = (i*1023)/BUFFER_SIZE;
+    }
+}
+
+void cfgPCB(){
+    PINSEL_CFG_Type cfgPin = {0};
+    
+    // cfg ADC - CH0
+    cfgPin.Portnum = 0;
+    cfgPin.Pinnum = 23;
+    cfgPin.Funcnum = 1;
+    cfgPin.Pinmode = PINSEL_PINMODE_TRISTATE;
+    cfgPin.OpenDrain = PINSEL_PINMODE_NORMAL;
+    PINSEL_ConfigPin(&cfgPin);
+
+    // cfg DAC - AOUT
+    cfgPin.Portnum = 0;
+    cfgPin.Pinnum = 26;
+    cfgPin.Funcnum = 2;
+    cfgPin.Pinmode = PINSEL_PINMODE_TRISTATE;
+    cfgPin.OpenDrain = PINSEL_PINMODE_NORMAL;
+    PINSEL_ConfigPin(&cfgPin);
+
+    // cfg EINT0
+    cfgPin.Portnum = 2;
+    cfgPin.Pinnum = 10;
+    cfgPin.Funcnum = 1;
+    cfgPin.Pinmode = PINSEL_PINMODE_PULLDOWN;
+    cfgPin.OpenDrain = PINSEL_PINMODE_NORMAL;
+    PINSEL_ConfigPin(&cfgPin);
+}
+
+void cfgADC(){
+    ADC_Init(LPC_ADC, 200000);
+    ADC_ChannelCmd(LPC_ADC, 0, ENABLE);
+    ADC_IntConfig(LPC_ADC, ADC_ADINTEN0, ENABLE);
+    NVIC_DisableIRQ(ADC_IRQn);
+    ADC_BurstCmd(LPC_ADC, ENABLE);
+    NVIC_SetPriority(ADC_IRQn, 1);
+}
+
+void cfgDAC(){
+    DAC_Init(LPC_DAC);
+    DAC_CONVERTER_CFG_Type cfgDAC = {0};
+    cfgDAC.DBLBUF_ENA = DISABLE;
+    cfgDAC.CNT_ENA = ENABLE;
+    cfgDAC.DMA_ENA = ENABLE;
+    DAC_ConfigDAConverterControl(LPC_DAC, &cfgDAC);
+    DAC_SetDMATimeOut(LPC_DAC, 5);
+}
+
+void cfgEINT(){
+    EXTI_SetMode(EXTI_EINT0, EXTI_MODE_EDGE_SENSITIVE);
+    EXTI_SetPolarity(EXTI_EINT0, EXTI_POLARITY_HIGH_ACTIVE_OR_RISING_EDGE);
+    EXTI_ClearEXTIFlag(EXTI_EINT0);
+    NVIC_SetPriority(EINT0_IRQn, 0);
+    NVIC_EnableIRQ(EINT0_IRQn);
+}
+
+void cfgDMA(){
+    GPDMA_Init();
+    GPDMA_Channel_CFG_Type cfgADC = {0};
+    GPDMA_LLI_Type cfgADC_LLI = {0};
+
+    // Configuracion canal 0 - ADC a SRAM
+
+    cfgADC_LLI.SrcAddr = (uint32_t)&LPC_ADC->ADGDR; 
+    cfgADC_LLI.DstAddr = (uint32_t)adc_samples;
+    cfgADC_LLI.NextLLI = (uint32_t)&cfgADC_LLI;
+    cfgADC_LLI.Control = (BUFFER_SIZE<<0)|(2<<18)|(2<<21)|(1<<27)&~(1<<26); //revisar
+
+    cfgADC.ChannelNum = 0;
+    cfgADC.SrcMemAddr = 0;
+    cfgADC.DstMemAddr = (uint32_t)adc_samples;
+    cfgADC.TransferSize = BUFFER_SIZE;
+    cfgAdc.TransferType = GPDMA_TRANSFERTYPE_P2M;
+    cfgADC.SrcConn = GPDMA_CONN_ADC;
+    cfgADC.DstConn = 0;
+    cfgADC.DMALLI = (uint32_t)&cfgADC_LLI;
+    GPDMA_Setup(&cfgADC);
+    GPDMA_ChannelCmd(0, ENABLE);
+
+    // Configuracion canal 1 - SRAM a DAC
+    GPDMA_Channel_CFG_Type cfgDAC = {0};
+    GPDMA_LLI_Type cfgDAC_LLI = {0};
+
+    cfgDAC_LLI.SrcAddr = (uint32_t)dac_wave;
+    cfgDAC_LLI.DstAddr = (uint32_t)&LPC_DAC->DACR;
+    cfgDAC_LLI.NextLLI = (uint32_t)&cfgDAC_LLI;
+    cfgDAC_LLI.Control = (BUFFER_SIZE<<0)|(2<<18)|(2<<21)|(1<<26)&~(1<<27); //revisar
+
+    cfgDAC.ChannelNum = 1;
+    cfgDAC.SrcMemAddr = (uint32_t)dac_wave;
+    cfgDAC.DstMemAddr = 0;
+    cfgDAC.TransferSize = BUFFER_SIZE;
+    cfgDAC.TransferType = GPDMA_TRANSFERTYPE_M2P;
+    cfgDAC.SrcConn = 0;
+    cfgDAC.DstConn = GPDMA_CONN_DAC;
+    cfgDAC.DMALLI = (uint32_t)&cfgDAC_LLI;
+    GPDMA_Setup(&cfgDAC);
+}
+
+int main(){
+    cfgPCB();
+    cfgEINT();
+    cfgADC();
+    cfgDAC();
+    cfgDMA();
+    waveform();
+    while(1);
+}
+
+void EINT0_IRQHandler(){
+    mode = !mode;
+    if(mode){
+        NVIC_EnableIRQ(ADC_IRQn);
+    }else{
+        NVIC_DisableIRQ(ADC_IRQn);
+        GPDMA_ChannelCmd(1, DISABLE);
+        GPDMA_ChannelCmd(0, ENABLE);
+    }
+    EXTI_ClearEXTIFlag(EXTI_EINT0);
+}
+
+void ADC_IRQHandler(){
+    ADC_ChannelCmd(LPC_ADC, 0, DISABLE);
+    GPDMA_ChannelCmd(0, DISABLE);
+    GPDMA_ChannelCmd(1, ENABLE);
+}

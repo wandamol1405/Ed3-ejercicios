@@ -11,7 +11,7 @@
 #define SRAM0 0x2007C000
 #define SRAM0_HALF SRAM0 + 0x2000
 #define SRAM1 0x20080000
-#define TRANSFER_SIZE (0x20080000 - 0x2007C000)/2
+#define TRANSFER_SIZE 0x2000 / sizeof(uint32_t)
 #define DAC_MAX 1023
 #define DAC_MID DAC_MAX/2
 #define NUM_SAMPLES 382 // Numero de muestras para formar la onda
@@ -120,9 +120,9 @@ void cfgDMA(){
 	GPDMA_LLI_Type cfgDAC_LLI = {0};
 	GPDMA_LLI_Type cfgDAC_WAVE_LLI = {0};
 
-	cfgADC_LLI.SrcAddr = (uint32_t)& LPC_ADC->ADDR0;
-	cfgADC_LLI.DstAddr = (uint32_t) adc_samples;
-	cfgADC_LLI.NextLLI = (uint32_t) &cfgADC_LLI;
+	cfgADC_LLI.SrcAddr = (uint32_t)&LPC_ADC->ADGDR; 
+	cfgADC_LLI.DstAddr = (uint32_t)adc_samples;
+	cfgADC_LLI.NextLLI = (uint32_t)&cfgADC_LLI;
 	cfgADC_LLI.Control = (TRANSFER_SIZE^0xFFF<<0)|(2<<18)|(2<<21)|(1<<27)&~(1<<26);
 
 	cfgADC.ChannelNum = 0;
@@ -144,9 +144,9 @@ void cfgDMA(){
 	cfgM2M.DstConn = 0;
 	cfgM2M.DMALLI = 0;
 
-	cfgDAC_LLI.SrcAddr = (uint32_t)& LPC_DAC->DACR;
-	cfgDAC_LLI.DstAddr = (uint32_t) adc_samples;
-	cfgDAC_LLI.NextLLI = (uint32_t) &cfgDAC_LLI;
+	cfgDAC_LLI.SrcAddr = (uint32_t)adc_samples;
+	cfgDAC_LLI.DstAddr = (uint32_t)&LPC_DAC->DACR;
+	cfgDAC_LLI.NextLLI = (uint32_t)&cfgDAC_LLI;
 	cfgDAC_LLI.Control = (TRANSFER_SIZE<<0)|(2<<18)|(2<<21)|(1<<26)&~(1<<27);
 
 	cfgDAC.ChannelNum = 1;
@@ -158,7 +158,7 @@ void cfgDMA(){
 	cfgDAC.DMALLI = (uint32_t)&cfgDAC_LLI;
 
 	cfgDAC_WAVE_LLI.SrcAddr = (uint32_t)dac_wave;
-	cfgDAC_WAVE_LLI.DstAddr = (uint32_t)LPC_DAC->DACR;
+	cfgDAC_WAVE_LLI.DstAddr = (uint32_t)&LPC_DAC->DACR;
 	cfgDAC_WAVE_LLI.NextLLI = (uint32_t)&cfgDAC_WAVE_LLI;
 	cfgDAC_WAVE_LLI.Control = (NUM_SAMPLES<<0)|(2<<18)|(2<<21)|(1<<26)&~(1<<27);
 
