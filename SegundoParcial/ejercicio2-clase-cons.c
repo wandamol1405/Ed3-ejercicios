@@ -53,6 +53,7 @@ void cfgPCB(){
 void cfgADC(){
     ADC_Init(LPC_ADC, MAX_FREC);
     ADC_ChannelCmd(LPC_ADC, ADC_CHANNEL_2, ENABLE);
+    ADC_IntConfig(LPC_ADC, ADC_ADINTEN0, ENABLE);
     ADC_BurstCmd(LPC_ADC, ENABLE);
 }
 
