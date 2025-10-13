@@ -14,7 +14,7 @@ de 100MHz. El codigo debe estar debidamente comentado.
 #define FREQ_ADC 40000 // 40kHz
 #define SRAM0 0x2007C000
 #define SRAM1 0x20080000
-#define BUFFER_SIZE (20*sizeof(uint32_t))
+#define BUFFER_SIZE 20
 
 uint32_t buffer0[BUFFER_SIZE];
 uint32_t buffer1[BUFFER_SIZE];
@@ -31,7 +31,7 @@ void cfgPCB(){
 	PINSEL_ConfigPin(&pin);
 
 	//CH4 del ADC -> P1.30 f3
-	pin.Pinnum = 1;
+	pin.Portnum = 1;
 	pin.Pinnum = 30;
 	pin.Funcnum = 3;
 	pin.Pinmode = PINSEL_PINMODE_TRISTATE;
