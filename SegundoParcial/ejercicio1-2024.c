@@ -32,8 +32,8 @@ de la planta y con una frecuencia de 10kHz:
 #define BUFFER_SIZE (1024 / sizeof(uint32_t)) // 1kB
 #define MATCH_VALUE_ADC 391 - 1 // 25us -> 40kHz
 #define MATCH_VALUE_S 500 - 1 // 100us -> 10kHz
-#define V_REF 3.3
 #define MAX_VALUE 4095
+#define V_OFFSET 1.65
 
 uint32_t *buffer = (uint32_t *) 0x2000E000;
 
@@ -143,26 +143,47 @@ int main(){
     while(1) {}
 }
 
-void DMA_IRQHandler(){
-    if(GPDMA_IntGetStatus(GPDMA_STAT_INT, 0)){
-        uint32_t sum = 0;
-        for(int i=0; i<BUFFER_SIZE; i++){
-            sum += (buffer[i] >> 4)& 0xFFF; // Desplazo 4 bits a la derecha para descartar los bits de estado
+void DMA_IRQHandler(void) {
+    if (GPDMA_IntGetStatus(GPDMA_STAT_INT, DMA_CHANNEL)) {
+        uint64_t sum = 0;
+        for (uint32_t i = 0; i < BUFFER_SIZE; ++i) {
+            uint32_t raw = buffer[i];
+            uint32_t code = (raw >> 4) & 0x0FFF;
+            sum += code;
         }
-        uint16_t avg = ((sum / BUFFER_SIZE)); // Promedio de las muestras
-        float32_t voltage = (avg * V_REF) / MAX_VALUE; // Conversión a voltaje
-        uint32_t dt = avg * (MATCH_VALUE_S / 4095);
-        if(voltage < 0.0){
-            // S1 adelanta a S2
-            LPC_TIM0->MR2 = dt;
-        }else{
-            // S2 adelanta a S1
-            LPC_TIM0->MR2 = MATCH_VALUE_S+dt;
+
+        float avg_code_f = (float)sum / (float)BUFFER_SIZE; // 0..4095 (float)
+
+        // --- Mapeo directo a -2..+2 V cuando el ADC está referenciado así ---
+        float vin = (avg_code_f / 4095.0f) * 4.0f - 2.0f; // -2 .. +2 V
+
+        // Período en microsegundos (T = 100 us para 10 kHz)
+        const float PERIOD_US = 100.0f;
+        const float HALF_US = PERIOD_US / 2.0f;
+
+        // dt en microsegundos: dt = PERIOD_US * |code/4095 - 0.5|
+        float dt_f = PERIOD_US * fabsf((avg_code_f / 4095.0f) - 0.5f);
+        if (dt_f > HALF_US) dt_f = HALF_US; // seguridad numérica
+        uint32_t dt_ticks = (uint32_t)roundf(dt_f); // ticks = microsegundos (prescaler = 1 us)
+
+        // Asignación de MR2 según signo de vin
+        if (vin < 0.0f) {
+            // S1 adelanta a S2 => S2 debe togglear AFTER S1 -> MR2 = HALF + dt
+            LPC_TIM0->MR2 = (uint32_t)(HALF_US) + dt_ticks;
+        } else {
+            // S2 adelanta a S1 => S2 togglea BEFORE S1 -> MR2 = HALF - dt
+            // evitar underflow:
+            uint32_t base = (uint32_t)(HALF_US);
+            if (dt_ticks > base) dt_ticks = base;
+            LPC_TIM0->MR2 = base - dt_ticks;
         }
-        GPDMA_ClearIntPending(GPDMA_STATCLR_INTTC, 0);
+
+        GPDMA_ClearIntPending(GPDMA_STATCLR_INTTC, DMA_CHANNEL);
     }
     NVIC_ClearPendingIRQ(DMA_IRQn);
 }
+
+
 
 void TIMER0_IRQHandler(){
     if(TIM_GetIntStatus(LPC_TIM0, TIM_MR0_INT)==SET){
