@@ -11,7 +11,6 @@ de señal posible por el DAC. Suponer una frecuencia de core cclk de
 #include "lpc17xx_pinsel.h"
 #include "lpc17xx_dac.h"
 #include "lpc17xx_timer.h"
-#include "lpc17xx_gpdma.h"
 
 #define MAX_VALUE 1024
 #define BUFFER_SIZE MAX_VALUE*2
@@ -30,7 +29,7 @@ void cfgPCB(){
 
 void cfgTimer(){
 	TIM_TIMERCFG_Type timer = {0};
-	timer.PrescaleOption = TIM_PRESCALE_USVAL;
+	timer.PrescaleOption = TIM_PRESCALE_TICKVAL;
 	timer.PrescaleValue = 0;
 
 	TIM_MATCHCFG_Type matcher = {0};
@@ -56,30 +55,9 @@ void cfgDAC(){
 	DAC_ConfigDAConverterControl(LPC_DAC, &dac);
 }
 
-void cfgDMA(){
-	GPDMA_Init();
-	GPDMA_LLI_Type list = {0};
-	list.SrcAddr = (uint32_t)wave;
-	list.DstAddr = (uint32_t)LPC_DAC->DACR;
-	list.NextLLI = (uint32_t)&list;
-	list.Control = (BUFFER_SIZE)|(1<<18)|(2<<21)|(1<<26);
-
-	GPDMA_Channel_CFG_Type channel = {0};
-	channel.ChannelNum = 0;
-	channel.SrcMemAddr = (uint32_t)wave;
-	channel.DstMemAddr = 0;
-	channel.TransferSize = BUFFER_SIZE;
-	channel.SrcConn = 0;
-	channel.DstConn = GPDMA_CONN_DAC;
-	channel.DMALLI = (uint32_t)&list;
-
-	GPDMA_Setup(&channel);
-	GPDMA_ChannelCmd(0, ENABLE);
-}
-
 void generate_wave(){
 	for(int i=0; i<MAX_VALUE; i++){ wave[i]=(i<<6);}
-	for(int i=MAX_VALUE; i>=0; i--){ wave[MAX_VALUE-i]=(i<<6);}
+	for(int i=MAX_VALUE-2; i>=0; i--){ wave[MAX_VALUE+(MAX_VALUE-2-i)]=(i<<6);}
 }
 
 int main(){
@@ -87,7 +65,6 @@ int main(){
 	cfgPCB();
 	cfgTimer();
 	cfgDAC();
-	cfgDMA();
 	while(1);
 }
 
