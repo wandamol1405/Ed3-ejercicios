@@ -32,7 +32,6 @@ void cfgPCB(){
 	PINSEL_CFG_Type cfgPin;
 
 	// Configuro el canal 0 del ADC
-
 	cfgPin.Portnum = 0;
 	cfgPin.Pinnum = 23;
 	cfgPin.Funcnum = 1;
@@ -42,7 +41,6 @@ void cfgPCB(){
 	PINSEL_ConfigPin(&cfgPin);
 
 	// Configuro la salida analogica del DAC
-
 	cfgPin.Portnum = 0;
 	cfgPin.Pinnum = 26;
 	cfgPin.Funcnum = 2;
@@ -52,7 +50,6 @@ void cfgPCB(){
 	PINSEL_ConfigPin(&cfgPin);
 
 	// Configuro la interrupcion externa EINT0
-
 	cfgPin.Portnum = 2;
 	cfgPin.Pinnum = 10;
 	cfgPin.Funcnum = 1;
