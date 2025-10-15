@@ -218,7 +218,7 @@ void  EINT0_IRQHandler(){
 		GPDMA_ChannelCmd(0, ENABLE);
 		break;
 	case 3:
-		LPC_ADC->ADCR &= ~(7<<4);
+		LPC_ADC->ADCR &= ~(7<<24);
 		GPDMA_ChannelCmd(0, DISABLE);
 		GPDMA_ChannelCmd(7, ENABLE);
 		break;

@@ -34,16 +34,17 @@ Suponer una frecuencia de core clk de 80 Mhz. El código debe estar debidamente 
 
 #define PRESCALER_VALUE 1000
 #define BUFFER_SIZE 0x2000 / sizeof(uint32_t)
+#define WAVE_SAMPLES 1024 - 1
 #define SRAM0 0x2007C000
 #define SRAM0_HALF SRAM0 + 0x2000
 
 uint16_t adc_samples[BUFFER_SIZE];
-uint32_t dac_wave[BUFFER_SIZE];
+uint32_t dac_wave[WAVE_SAMPLES];
 uint8_t mode = 1; // true: wave, false: adc
 
 void waveform(){
-    for(uint16_t i=0; i<BUFFER_SIZE; i++){
-        dac_wave[i] = (i*1023)/BUFFER_SIZE;
+    for(uint16_t i=0; i<WAVE_SAMPLES; i++){
+        dac_wave[i] = (i*1023)/WAVE_SAMPLES; // Maximo incremento 1
     }
 }
 
@@ -91,7 +92,7 @@ void cfgDAC(){
     cfgDAC.CNT_ENA = ENABLE;
     cfgDAC.DMA_ENA = ENABLE;
     DAC_ConfigDAConverterControl(LPC_DAC, &cfgDAC);
-    DAC_SetDMATimeOut(LPC_DAC, 5);
+    DAC_SetDMATimeOut(LPC_DAC, 11); // 614us / 1024 muestras = 0.599us -> 11 ciclos de 80MHz
 }
 
 void cfgEINT(){

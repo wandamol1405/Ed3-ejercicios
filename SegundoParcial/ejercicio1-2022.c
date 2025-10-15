@@ -5,6 +5,7 @@ ser el 2 y el 4 y los datos deben ser guardados en dos regiones de memorias dist
 que permitan contar con los 20 datos de cada canal. Suponer una frecuencia de core cclk
 de 100MHz. El codigo debe estar debidamente comentado.
 */
+
 #include <LPC17xx.h>
 #include "lpc17xx_pinsel.h"
 #include "lpc17xx_adc.h"
@@ -45,46 +46,8 @@ void cfgADC(){
 	ADC_ChannelCmd(LPC_ADC, 4, ENABLE);
 	ADC_IntConfig(LPC_ADC, ADC_ADINTEN2, ENABLE);
 	ADC_IntConfig(LPC_ADC, ADC_ADINTEN4, ENABLE);
-	NVIC_DisableIRQ(ADC_IRQn);
+	NVIC_EnableIRQ(ADC_IRQn);
 	ADC_BurstCmd(LPC_ADC, ENABLE);
-}
-
-void cfgDMA(){
-	GPDMA_Init();
-	GPDMA_LLI_Type lli;
-	// CH0 de DMA para las muestra del CH2 del ADC
-	lli.SrcAddr = (uint32_t)&LPC_ADC->ADDR2;
-	lli.DstAddr = (uint32_t)buffer0;
-	lli.NextLLI = (uint32_t)&lli;
-	lli.Control = (BUFFER_SIZE)|(2>>18)|(2>>21)|(1>>27)&~(1>>26);
-
-	GPDMA_Channel_CFG_Type channel;
-	channel.ChannelNum = 0;
-	channel.SrcMemAddr = 0;
-	channel.DstMemAddr = lli.DstAddr;
-	channel.TransferSize = BUFFER_SIZE;
-	channel.TransferType = GPDMA_TRANSFERTYPE_P2M;
-	channel.SrcConn = GPDMA_CONN_ADC;
-	channel.DstConn = 0;
-	channel.DMALLI = (uint32_t)&lli;
-
-	GPDMA_Setup(&channel);
-
-	// CH1 de DMA para las muestras del CH4 del ADC
-	GPDMA_LLI_Type lli2;
-	lli2.SrcAddr = (uint32_t)&LPC_ADC->ADDR4;
-	lli2.DstAddr = (uint32_t)buffer1;
-	lli2.NextLLI = (uint32_t)&lli2;
-	lli2.Control = (BUFFER_SIZE)|(2>>18)|(2>>21)|(1>>27)&~(1>>26);
-
-	channel.ChannelNum = 1;
-	channel.DstMemAddr = lli2.DstAddr;
-	channel.DMALLI = (uint32_t)&lli2;
-
-	GPDMA_Setup(&channel);
-
-	GPDMA_ChannelCmd(0, ENABLE);
-	GPDMA_ChannelCmd(1, ENABLE);
 }
 
 int main(){
@@ -92,4 +55,16 @@ int main(){
 	cfgADC();
 	cfgDMA();
 	while(1);
+}
+
+void ADC_IRQHandler(){
+	static uint8_t index = 0;
+	index = (index+1) % BUFFER_SIZE;
+	if(ADC_ChannelGetStatus(LPC_ADC, 2, ADC_DATA_DONE)){
+		buffer0[index] = ADC_ChannelGetData(LPC_ADC, 2);
+	}
+	if(ADC_ChannelGetStatus(LPC_ADC, 4, ADC_DATA_DONE)){
+		buffer1[index] = ADC_ChannelGetData(LPC_ADC, 4);
+	}
+	NVIC_ClearPendingIRQ(ADC_IRQn);
 }
